@@ -219,6 +219,11 @@ class TwitterBootstrapHelper extends AppHelper {
 		} else {
 			$options["field"] = "{$model}.{$options["field"]}";
 		}*/
+		$wrap_class = "control-group";
+		if (!empty($options['div'])) {
+			$wrap_class = $options['div'];
+			unset($options['div']);
+		}
 		if ($options['label'] === false) {
 			$options['label'] = '';
 		} else if (!empty($options['label'])) {
@@ -249,10 +254,19 @@ class TwitterBootstrapHelper extends AppHelper {
 			$options['input'].$help_inline.$help_block,
 			array("class" => "controls")
 		);
-		$wrap_class = "control-group";
 		if ($options["state"] !== false) {
 			$wrap_class = "{$wrap_class} {$options["state"]}";
 		}
+
+		// dirty hack to check if a field is required
+		$magicStr = 'classStartsHere-';
+		$allowedClasses = array('required');
+		$str = $this->Form->input($options['field'], array('label'=>false, 'div'=>$magicStr));
+		if (preg_match('/'.$magicStr.'\s*([^"]+)"/', $str, $match)) {
+			$classes = explode(' ', $match[1]);
+			$wrap_class = $wrap_class.' '.implode('', array_intersect($classes, $allowedClasses));
+		}
+
 		return $this->Html->tag(
 			"div",
 			$options['label'].$input,
@@ -364,6 +378,8 @@ class TwitterBootstrapHelper extends AppHelper {
 		unset($options["options"]);
 		$inputs = "";
 		$hiddenField = (isset($options['hiddenField']) && $options['hiddenField']);
+		$inline = isset($options['inline']);
+		unset($options['inline']);
 		foreach ($opt as $key => $val) {
 			$input = $this->Form->radio(
 				$options["field"],
@@ -379,7 +395,7 @@ class TwitterBootstrapHelper extends AppHelper {
 				$input = $this->Html->tag(
 					"label",
 					$input,
-					array("class" => "radio", "for" => $id)
+					array("class" => "radio" . ($inline ? " inline" : ""), "for" => $id)
 				);
 			}
 			$inputs .= $input;
@@ -837,6 +853,29 @@ class TwitterBootstrapHelper extends AppHelper {
 			"<h1>$title</h1>",
 			array("class" => "page-header")
 		);
+	}
+
+	public function form_create($model = null, $options = array()) {
+		$options = array_merge(
+			array(
+				'class' => 'form-horizontal',
+				'inputDefaults' => array('div' => false, 'label' => 'false')
+			),
+			(array) $options
+		);
+		return $this->Form->create($model, $options);
+	}
+
+	public function form_end($options = null) {
+		if (is_string($options)) $options = array('label' => $options);
+		$options = array_merge(
+			array(
+				'div' => 'form-actions',
+				'class' => 'btn btn-primary'
+			),
+			(array) $options
+		);
+		return $this->Form->end($options);
 	}
 
 }
