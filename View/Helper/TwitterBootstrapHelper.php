@@ -267,7 +267,7 @@ class TwitterBootstrapHelper extends AppHelper {
 		// dirty hack to check if a field is required
 		$magicStr = 'classStartsHere-';
 		$allowedClasses = array('required');
-		$str = $this->Form->input($options['field'], array('label'=>false, 'div'=>$magicStr));
+		$str = $this->Form->input($options['field'], array('label'=>false, 'div'=>$magicStr, 'type' => 'text'));
 		if (preg_match('/'.$magicStr.'\s*([^"]+)"/', $str, $match)) {
 			$classes = explode(' ', $match[1]);
 			$wrap_class = $wrap_class.' '.implode('', array_intersect($classes, $allowedClasses));
@@ -302,7 +302,12 @@ class TwitterBootstrapHelper extends AppHelper {
 					if ($key !== 'type' || !empty($value)) $opt[$key] = $value;
 				}
 			}
-			$input = $this->Form->input($options["field"], $opt);
+
+			if (!empty($options['type']) && ($options['type'] == 'datetimePicker')) {
+				$input = $this->_construct_datetime_picker_input($options["field"], $opt);
+			} else {
+				$input = $this->Form->input($options["field"], $opt);
+			}
 			if (isset($options["checkbox_label"])) {
 				$input = $this->Form->label($options["field"], $input.' '.$options["checkbox_label"], array('class' => 'checkbox'));
 			}
@@ -903,6 +908,43 @@ class TwitterBootstrapHelper extends AppHelper {
 			(array) $options
 		);
 		return $this->Form->end($options);
+	}
+
+	protected function _construct_datetime_picker_input($fieldName, $options) {
+
+		$this->setEntity($fieldName);
+		$options = $this->value($options);
+
+		if(isset($options['value']) && is_string($options['value']) &&
+			preg_match("/(?<year>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2}) (?<hour>\d{1,2}):(?<minute>\d{1,2})/", $options['value'], $match)) {
+			$options['value'] = $match;
+		}
+		if (isset($options['value']) && is_array($options['value'])) {
+			if (isset($options['value']['date'])) {
+				$dateValue = $options['value']['date'];
+			}
+			if (isset($options['value']['time'])) {
+				$timeValue = $options['value']['time'];
+			}
+			if (isset($options['value']['year']) && isset($options['value']['month']) && isset($options['value']['day'])) {
+				$dateValue = sprintf('%02d-%02d-%04d', $options['value']['day'], $options['value']['month'], $options['value']['year']);
+			}
+			if (isset($options['value']['hour']) && isset($options['value']['minute'])) {
+				$timeValue = sprintf('%02d:%02d', $options['value']['hour'], $options['value']['minute']);
+			}
+		}
+
+		$out = '';
+		$options['type'] = 'text';
+		unset($options['field']);
+		$opt = array('class' => 'input-small', 'placeholder' => 'mm-dd-jjjj');
+		if (isset($dateValue)) $opt = $opt + array('value' => $dateValue);
+		$out .= $this->Form->input($fieldName.'.date', $opt);
+		$out .= "&nbsp;";
+		$opt = array('class' => 'input-small', 'placeholder' => 'hh:mm');
+		if (isset($timeValue)) $opt = $opt + array('value' => $timeValue);
+		$out .= $this->Form->input($fieldName.'.time', $opt);
+		return $out;
 	}
 
 }
