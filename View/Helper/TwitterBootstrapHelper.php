@@ -8,6 +8,7 @@
  * @property FormHelper $Form
  * @property HtmlHelper $Html
  * @property SessionHelper $Session
+ * @property JsHelper $Js
  *
  */
 class TwitterBootstrapHelper extends AppHelper {
@@ -18,7 +19,7 @@ class TwitterBootstrapHelper extends AppHelper {
 	 * @var array
 	 * @access public
 	 */
-	public $helpers = array("Form", "Html", "Session");
+	public $helpers = array("Form", "Html", "Session", "Js");
 
 	/**
 	 * Options used internally. Don't send any of these options along to FormHelper
@@ -34,6 +35,8 @@ class TwitterBootstrapHelper extends AppHelper {
 		'error',
 		'checkbox_label'
 	);
+
+	protected $_datePickerJsInserted = false;
 
 	/**
 	 * basic_input
@@ -915,6 +918,8 @@ class TwitterBootstrapHelper extends AppHelper {
 		$this->setEntity($fieldName);
 		$options = $this->value($options);
 
+		$this->_insertDatePickerJs();
+
 		if(isset($options['value']) && is_string($options['value']) &&
 			preg_match("/(?<year>\d{4})-(?<month>\d{1,2})-(?<day>\d{1,2}) (?<hour>\d{1,2}):(?<minute>\d{1,2})/", $options['value'], $match)) {
 			$options['value'] = $match;
@@ -937,7 +942,7 @@ class TwitterBootstrapHelper extends AppHelper {
 		$out = '';
 		$options['type'] = 'text';
 		unset($options['field']);
-		$opt = array('class' => 'input-small', 'placeholder' => 'mm-dd-jjjj');
+		$opt = array('class' => 'input-small datepicker', 'placeholder' => 'dd-mm-jjjj', 'data-date-format' => 'dd-mm-yyyy');
 		if (isset($dateValue)) $opt = $opt + array('value' => $dateValue);
 		$out .= $this->Form->input($fieldName.'.date', $opt);
 		$out .= "&nbsp;";
@@ -945,6 +950,14 @@ class TwitterBootstrapHelper extends AppHelper {
 		if (isset($timeValue)) $opt = $opt + array('value' => $timeValue);
 		$out .= $this->Form->input($fieldName.'.time', $opt);
 		return $out;
+	}
+
+	protected function _insertDatePickerJs() {
+		if ($this->_datePickerJsInserted) return;
+		$this->Html->script(array('bootstrap-datepicker', 'locales/bootstrap-datepicker.nl'), false);
+		$js = "\$('.datepicker').datepicker({language:'nl', weekStart:1});";
+		$this->Js->buffer($js);
+		$this->_datePickerJsInserted = true;
 	}
 
 }
